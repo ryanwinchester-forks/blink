@@ -1,4 +1,5 @@
 Mix.install([
+  {:benchee, "~> 1.3.0"},
   {:castore, "~> 1.0"},
   {:mint, "~> 1.0"}
 ])
@@ -20,14 +21,14 @@ defmodule DoThing do
     receive do
       message ->
         {:ok, conn, responses} = Mint.HTTP.stream(conn, message)
-        stream(conn, h(responses, acc)) |> IO.iodata_to_binary()
+        stream(conn, h(responses, acc)) |> :erlang.iolist_to_binary()
     end
   end
 
   def h([], acc), do: acc
-  def h([{:status, _, code} | xs], []), do: h(xs, [Integer.to_string(code)])
-  def h([{:headers, _, headers} | xs], acc), do: h(xs, [acc, ?\n, hs(headers)])
-  def h([{:data, _, body} | xs], acc), do: h(xs, [acc, body])
+  def h([{:status, _, code} | xs], []), do: h(xs, [to_string(code), ?\n])
+  def h([{:headers, _, headers} | xs], acc), do: h(xs, [acc | hs(headers)])
+  def h([{:data, _, body} | xs], acc), do: h(xs, [acc | body])
   def h([{:done, _} | _xs], acc), do: {:done, acc}
 
   def hs(headers) do
